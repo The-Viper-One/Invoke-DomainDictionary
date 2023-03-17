@@ -27,6 +27,8 @@ Get-DomainUser -Properties mail -Domain $Domain | Select -ExpandProperty mail | 
 Get-DomainUser -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname | Add-Content -Path $Path\$File
 Get-DomainUser -Properties userprincipalname -Domain $Domain | Select -ExpandProperty userprincipalname | Add-Content -Path $Path\$File
 Get-DomainUser -Properties serviceprincipalname -Domain $Domain | Select -ExpandProperty serviceprincipalname | Add-Content -Path $Path\$File
+Get-DomainUser -Properties serviceprincipalname  | Select -ExpandProperty serviceprincipalname | ForEach-Object {
+    $_ -replace '^[^/]+/' | Add-Content -Path $Path\$File
 
 }
 
