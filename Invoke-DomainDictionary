@@ -30,6 +30,8 @@ Get-DomainUser -Properties givenname -Domain $Domain | Select -ExpandProperty gi
 Get-DomainUser -Properties mail -Domain $Domain | Select -ExpandProperty mail | Add-Content -Path $Path\$File
 Get-DomainUser -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname | Add-Content -Path $Path\$File
 Get-DomainUser -Properties userprincipalname -Domain $Domain | Select -ExpandProperty userprincipalname | Add-Content -Path $Path\$File
+Get-DomainUser -Properties sn -Domain $Domain | Select -ExpandProperty sn | Add-Content -Path $Path\$File
+Get-DomainUser -Properties physicaldeliveryofficename -Domain $Domain | Select -ExpandProperty physicaldeliveryofficename | Add-Content -Path $Path\$File
 Get-DomainUser -Properties serviceprincipalname -Domain $Domain | Select -ExpandProperty serviceprincipalname | Add-Content -Path $Path\$File
 Get-DomainUser -Properties serviceprincipalname  | Select -ExpandProperty serviceprincipalname | ForEach-Object {
     $_ -replace '^[^/]+/' | Add-Content -Path $Path\$File
