@@ -90,6 +90,36 @@ Write-Host "[INFO] Gathering Domain OU Properties" -ForegroundColor "Cyan"
 Get-DomainOU -Properties ou -Domain $Domain  | Select -ExpandProperty ou |Add-Content -Path $Path\$File
 Get-DomainOU -Properties name -Domain $Domain  | Select -ExpandProperty name |Add-Content -Path $Path\$File
 
+    function Remove-DistinguishedName {
+    param (
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]$DistinguishedName
+    )
+    $DistinguishedName -replace '(OU|CN|DC)=', '' -split ',' | ForEach-Object {
+        $_.Trim()
+    }
+}
+
+Get-DomainOU -Properties distinguishedname | ForEach-Object {
+    Remove-DistinguishedName $_.distinguishedname | ForEach-Object {
+        Add-Content -value $_  -Path $Path\$File
+    }
+}function Remove-DistinguishedName {
+    param (
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [string]$DistinguishedName
+    )
+    $DistinguishedName -replace '(OU|CN|DC)=', '' -split ',' | ForEach-Object {
+        $_.Trim()
+    }
+}
+
+Get-DomainOU -Properties distinguishedname | ForEach-Object {
+    Remove-DistinguishedName $_.distinguishedname | ForEach-Object {
+        Add-Content -value $_  -Path $Path\$File
+    }
+}
+
 }
 
 Function MiscProperties {
