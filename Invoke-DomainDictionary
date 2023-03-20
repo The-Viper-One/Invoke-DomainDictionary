@@ -23,11 +23,11 @@ $ErrorActionPreference = "Silentlycontinue"
 Write-Host "[INFO] Creating Empty file to be populated" 
 
 New-Item -Name $File -Path $Path -ItemType "File" -Force | Out-Null
-Add-Content -Path $Path\$File -Value $null
+Add-Content -Path $Path\$File -Value $null -Encoding "ASCII"
 
 Function DomainUserProperties{
 Write-Host "[INFO] Gathering Domain User Properties" 
-Get-DomainUser -Properties name -Domain $Domain | Select -ExpandProperty name | Add-Content -Path $Path\$File
+Get-DomainUser -Properties name -Domain $Domain | Select -ExpandProperty name | Add-Content -Path $Path\$File 
 Get-DomainUser -Properties cn -Domain $Domain | Select -ExpandProperty cn | Add-Content -Path $Path\$File
 Get-DomainUser -Properties description -Domain $Domain | Select -ExpandProperty description | Add-Content -Path $Path\$File
 Get-DomainUser -Properties givenname -Domain $Domain | Select -ExpandProperty givenname | Add-Content -Path $Path\$File
@@ -154,7 +154,7 @@ MiscProperties
 
 
 
-Get-Content -Path $Path\$File | Sort | Get-Unique > $Path\$Final
+Get-Content -Path $Path\$File | Sort | Get-Unique | Set-Content -Encoding "ASCII" -Path $Path\$Final
 
 
 
@@ -196,23 +196,24 @@ foreach ($Line in $Lines) {
     foreach ($Word in $Words) {
         foreach ($Permutation in $Permutations) {
             $NewLine = "$Word$Permutation"
-            Add-Content $PermutationsOutput $NewLine
+            Add-Content $PermutationsOutput $NewLine "ASCII"
         }
         
         foreach ($Permutation in $Permutations) {
             $NewLine = "$Permutation$Word"
-            Add-Content $PermutationsOutput $NewLine
+            Add-Content $PermutationsOutput $NewLine "ASCII"
         }
         
         foreach ($Permutation in $Permutations) {
             $NewLine = "$Word$Permutation"
             if ($Permutation -ne "0") {
-                Add-Content $PermutationsOutput $NewLine
+                Add-Content $PermutationsOutput $NewLine -Encoding "ASCII"
+                
                 }
             }
         }
     }
- Get-Content -Path "$PermutationsOutput" | Sort | Get-Unique >> "$Path\$Final" -verbose ; Remove-item -Path "$PermutationsOutput" ; Write-Host "[INFO] Removing file $PermutationsOutput"
+ Get-Content -Path "$PermutationsOutput" | Sort | Get-Unique | Set-Content -Encoding "ASCII" -Path "$Path\$Final"; Remove-item -Path "$PermutationsOutput" ; Write-Host "[INFO] Removing file $PermutationsOutput"
 
 }
 
@@ -222,7 +223,6 @@ $OriginalFileCount = (Get-Content -Path $Path\$File).count
 $FinalFileLines = (Get-Content -Path $Path\$Final).count
 Start-Sleep -Seconds 1
 Remove-Item -Path $Path\$File -Force 
-Write-Host ""
 Write-Host "[INFO] Original File Has [$OriginalFileCount] Lines"
 Write-Host "[INFO] Removing Duplicate entries"
 Write-Host "[INFO] Final file has [$FinalFileLines] Lines"
