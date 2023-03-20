@@ -192,7 +192,7 @@ Write-Host "[INFO] Adding Permutations. This will likely take a while" -Foregrou
 foreach ($Line in $Lines) {
     # Split line into words
     $Words = $Line -split '\s+'
-    s
+    
     foreach ($Word in $Words) {
         foreach ($Permutation in $Permutations) {
             $NewLine = "$Word$Permutation"
