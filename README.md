@@ -2,12 +2,12 @@
 Parses information from the Current or specified Domain into a dictionary file to be used for password cracking
 
 
-### Load into memory:
+### Load into memory
 ```
 IEX (IWR -UseBasicParsing https://raw.githubusercontent.com/The-Viper-One/Invoke-DomainDictionary/main/Invoke-DomainDictionary)
 ```
 
-### Commands:
+### Commands
 ```
 Invoke-DomainDictionary                      # Run with default options
 Invoke-DomainDictionary -Permuate Y          # Run with permutations
