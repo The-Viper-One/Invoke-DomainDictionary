@@ -228,7 +228,7 @@ Write-Host "[INFO] Removing Duplicate entries"
 Write-Host "[INFO] Final file has [$FinalFileLines] Lines"
 Write-Host "[INFO] Final file located at $Path\$Final"
 Start-Sleep -Milliseconds 1337
-If ($Console -eq "Y"){Get-Content -Path $Path\$Final ; Remove-Item -Path $Path\$Final; Write-Host "[INFO] Removing File $Path\$Final"  }
+If ($Console -eq "Y"){Get-Content -Path $Path\$Final ; Remove-Item -Path $Path\$Final; Write-host "" ; Write-Host "[INFO] Removing File $Path\$Final" -ForegroundColor "Yellow"  }
 Write-Host ""
 Write-Host "[INFO] Script Execution Complete" -ForegroundColor "Green"
 
