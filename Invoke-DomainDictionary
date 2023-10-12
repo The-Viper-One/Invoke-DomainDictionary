@@ -78,13 +78,16 @@ Function Invoke-DomainDictionary {
         Add-Content -Value $Domain -Path $File -Encoding ASCII
     }
 
-    # Clear $File if exists
     if (Test-Path -Path $File -PathType Leaf) {
         Remove-Item -Path $File -Force
     }
-
+    
+    Write-Host
+    Write-Host
     Write-Host "-[Invoke-DomainDictionary]-" -ForegroundColor "Yellow"
     Write-Host
+
+
 
     DomainEntityProperties -Domain $Domain -File $File -Entity "user" -Properties $userProperties
     DomainEntityProperties -Domain $Domain -File $File -Entity "computer" -Properties $computerProperties
@@ -101,12 +104,17 @@ Function Invoke-DomainDictionary {
     } | Where-Object { $_ -ne '' } | Sort-Object | Get-Unique -AsString | Set-Content -Path "$File" -Force
 
     Write-Host
-    Write-Host
+
+    Write-Host "+ " -NoNewline -ForegroundColor "Green"
+    Write-Host "For best results run as a wordlist with hashcat and a rule set"
+
     Write-Host "+ " -NoNewline -ForegroundColor "Green"
     Write-Host "Results output to $File"
 
     Write-Host "+ " -NoNewline -ForegroundColor "Green"
     Write-Host "Total Lines in Wordlist: $((Get-Content -Path $File | Measure-Object -Line).Lines)"
+
+
 
 }
 
