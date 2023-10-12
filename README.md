@@ -14,10 +14,6 @@ Invoke-DomainDictionary -Domain [Domain]       # Speciy the domain from which to
 Invoke-DomainDictionary -File [PATH\FileName]  # Specify name of output file
 ```
 
-### Basic Run
-```
-Invoke-DomainDictionary
-```
 
 ### Sample
 
