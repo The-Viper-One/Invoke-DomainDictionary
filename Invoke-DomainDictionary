@@ -5,7 +5,7 @@ Function Invoke-DomainDictionary {
     )
 
     Try {
-        New-Item -Path $File -ItemType "File" -Force -ErrorAction "Stop"
+        New-Item -Path $File -ItemType "File" -Force -ErrorAction "Stop" | Out-Null
     }
     
     Catch {
