@@ -4,6 +4,19 @@ Function Invoke-DomainDictionary {
         [string]$File = "$pwd\DomainDictionary.txt"
     )
 
+    Try {
+        New-Item -Path $File -ItemType "File" -Force -ErrorAction "Stop"
+    }
+    
+    Catch {
+    
+    Write-Host
+    Write-Host "- " -ForegroundColor "Red" -NoNewline
+    Write-Host "Unable to write to path: $File"
+    break
+    
+    }
+
 
 
     Function QueryAndWriteProperties {
@@ -37,7 +50,10 @@ Function Invoke-DomainDictionary {
             }
         }
         Catch {
-            Write-Host "[ERROR] $($Error[0].Exception.Message)" -ForegroundColor Red
+            Write-Host
+            Write-Host "- "  -ForegroundColor "Red" -NoNewline
+            Write-Host "Connecting to the Domain"
+            break
         }
         Finally {
             $searcher.Dispose()
