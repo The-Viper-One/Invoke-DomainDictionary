@@ -9,10 +9,9 @@ IEX (IWR -UseBasicParsing https://raw.githubusercontent.com/The-Viper-One/Invoke
 
 ### Commands
 ```
-Invoke-DomainDictionary                      # Run with default options
-Invoke-DomainDictionary -Permuate Y          # Run with permutations
-Invoke-DomainDictionary -Domain [Domain]     # Speciy the domain from which to collect from
-Invoke-DomainDictionary -Console Y           # Output to console only
+Invoke-DomainDictionary                        # Run with default options
+Invoke-DomainDictionary -Domain [Domain]       # Speciy the domain from which to collect from
+Invoke-DomainDictionary -File [PATH\FileName]  # Specify name of output file
 ```
 
 ### Basic Run
@@ -23,4 +22,3 @@ Invoke-DomainDictionary
 ### Sample
 
 ![image](https://user-images.githubusercontent.com/68926315/233142893-42ee5835-02d9-44d6-80e1-94356df4a954.png)
-
