@@ -1,99 +1,113 @@
-$File = "C:\Users\srv01_user\Result.txt"
-$Domain = "$env:USERDNSDOMAIN"
-
-Function QueryAndWriteProperties {
+Function Invoke-DomainDictionary {
     param(
-        [string]$Domain,
-        [string[]]$Properties,
-        [string]$ObjectClass,
-        [string]$File
+        [string]$Domain = $env:USERDNSDOMAIN,
+        [string]$File = "$pwd\DomainDictionary.txt"
     )
 
-    Try {
-        $directoryEntry = [ADSI]"LDAP://$Domain"
-        $searcher = New-Object System.DirectoryServices.DirectorySearcher($directoryEntry)
-        $searcher.PageSize = 1000
-        $searcher.Filter = "(objectClass=$ObjectClass)"
-        $searcher.PropertiesToLoad.AddRange($Properties) | Out-Null
-        
-        $results = $searcher.FindAll()
 
-        foreach ($result in $results) {
-    $output = $Properties | ForEach-Object {
-        if ($result.Properties[$_].Count -gt 0) {
-            if ($_ -eq 'description') {
-                $result.Properties[$_][0] -split '\s+' 
-            } else {
-                "$($result.Properties[$_][0])" 
+
+    Function QueryAndWriteProperties {
+        param(
+            [string]$Domain,
+            [string[]]$Properties,
+            [string]$ObjectClass,
+            [string]$File
+        )
+
+        Try {
+            $directoryEntry = [ADSI]"LDAP://$Domain"
+            $searcher = New-Object System.DirectoryServices.DirectorySearcher($directoryEntry)
+            $searcher.PageSize = 1000
+            $searcher.Filter = "(objectClass=$ObjectClass)"
+            $searcher.PropertiesToLoad.AddRange($Properties) | Out-Null
+
+            $results = $searcher.FindAll()
+
+            foreach ($result in $results) {
+                $output = $Properties | ForEach-Object {
+                    if ($result.Properties[$_].Count -gt 0) {
+                        if ($_ -eq 'description') {
+                            $result.Properties[$_][0] -split '\s+'
+                        } else {
+                            "$($result.Properties[$_][0])"
+                        }
+                    }
+                }
+                Add-Content -Path $File -Value ($output -join "`r`n") -Encoding ASCII
             }
         }
+        Catch {
+            Write-Host "[ERROR] $($Error[0].Exception.Message)" -ForegroundColor Red
+        }
+        Finally {
+            $searcher.Dispose()
+        }
     }
-    Add-Content -Path $File -Value ($output -join "`r`n") -Encoding ASCII
-}
+
+    Function DomainEntityProperties {
+        param(
+            [string]$Domain,
+            [string]$File,
+            [string]$Entity,
+            [string[]]$Properties
+        )
+
+        Write-Host "- Gathering domain $Entity properties"
+        QueryAndWriteProperties -Domain $Domain -Properties $Properties -ObjectClass $Entity -File $File
     }
-    Catch {
-        Write-Host "[ERROR] $($Error[0].Exception.Message)" -ForegroundColor Red
+
+    # Property Definitions
+    $userProperties = @("name", "cn", "description", "givenname", "mail", "samaccountname", "userprincipalname", "sn",
+    "physicaldeliveryofficename", "st", "postofficebox", "l", "co", "postalcode", "serviceprincipalname")
+
+    $computerProperties = @("name", "cn", "description", "samaccountname", "dnshostname", "operatingsystem")
+    $groupProperties = @("cn", "samaccountname", "description", "name", "mail")
+    $gpoProperties = @("displayname", "distinguishedname")
+    $zoneProperties = @("name", "distinguishedname")
+    $controllerProperties = @("operatingsystemversion", "distinguishedname", "name", "dnshostname", "site", "location")
+
+    Function MiscProperties {
+        param(
+            [string]$Domain,
+            [string]$File
+        )
+
+        Write-Host "- Gathering domain miscellaneous properties"
+
+        Add-Content -Value $env:USERDNSDOMAIN -Path $File -Encoding ASCII
+        Add-Content -Value $Domain -Path $File -Encoding ASCII
     }
-    Finally {
-        $searcher.Dispose()
+
+    # Clear $File if exists
+    if (Test-Path -Path $File -PathType Leaf) {
+        Remove-Item -Path $File -Force
     }
+
+    Write-Host "-[Invoke-DomainDictionary]-" -ForegroundColor "Yellow"
+    Write-Host
+
+    DomainEntityProperties -Domain $Domain -File $File -Entity "user" -Properties $userProperties
+    DomainEntityProperties -Domain $Domain -File $File -Entity "computer" -Properties $computerProperties
+    DomainEntityProperties -Domain $Domain -File $File -Entity "group" -Properties $groupProperties
+    DomainEntityProperties -Domain $Domain -File $File -Entity "groupPolicyContainer" -Properties $gpoProperties
+    DomainEntityProperties -Domain $Domain -File $File -Entity "dnszone" -Properties $zoneProperties
+    DomainEntityProperties -Domain $Domain -File $File -Entity "computer" -Properties $controllerProperties
+    MiscProperties -Domain $Domain -File $File
+
+    Get-Content -Path "$File" | ForEach-Object {
+        $_.ToLower().Trim() -split '[,=]' | ForEach-Object {
+            $_.Trim()
+        }
+    } | Where-Object { $_ -ne '' } | Sort-Object | Get-Unique -AsString | Set-Content -Path "$File" -Force
+
+    Write-Host
+    Write-Host
+    Write-Host "+ " -NoNewline -ForegroundColor "Green"
+    Write-Host "Results output to $File"
+
+    Write-Host "+ " -NoNewline -ForegroundColor "Green"
+    Write-Host "Total Lines in Wordlist: $((Get-Content -Path $File | Measure-Object -Line).Lines)"
+
 }
-
-
-Function DomainEntityProperties {
-    param(
-        [string]$Domain,
-        [string]$File,
-        [string]$Entity,
-        [string[]]$Properties
-    )
-
-    Write-Host "[INFO] Gathering Domain $Entity Properties"
-    QueryAndWriteProperties -Domain $Domain -Properties $Properties -ObjectClass $Entity -File $File
-}
-
-# Property Definitions
-$userProperties = @("name", "cn", "description", "givenname", "mail", "samaccountname", "userprincipalname", "sn", 
-                    "physicaldeliveryofficename", "st", "postofficebox", "l", "co", "postalcode", "serviceprincipalname")
-                    
-$computerProperties = @("name", "cn", "description", "samaccountname", "dnshostname", "operatingsystem")
-$groupProperties = @("cn", "samaccountname", "description", "name", "mail")
-$gpoProperties = @("displayname", "distinguishedname")
-$zoneProperties = @("name", "distinguishedname")
-$controllerProperties = @("operatingsystemversion", "distinguishedname", "name", "dnshostname", "site", "location")
-
-Function MiscProperties {
-    param(
-        [string]$Domain,
-        [string]$File
-    )
-
-    Write-Host "[INFO] Gathering Domain Miscellaneous Properties" 
-
-    Add-Content -Value $env:USERDNSDOMAIN -Path $File -Encoding ASCII
-    Add-Content -Value $Domain -Path $File -Encoding ASCII
-}
-
-
-
-# Clear $File if exists
-if (Test-Path -Path $File -PathType Leaf) {
-    Remove-Item -Path $File -Force
-}
-
-
-DomainEntityProperties -Domain $Domain -File $File -Entity "user" -Properties $userProperties
-DomainEntityProperties -Domain $Domain -File $File -Entity "computer" -Properties $computerProperties
-DomainEntityProperties -Domain $Domain -File $File -Entity "group" -Properties $groupProperties
-DomainEntityProperties -Domain $Domain -File $File -Entity "groupPolicyContainer" -Properties $gpoProperties
-DomainEntityProperties -Domain $Domain -File $File -Entity "dnszone" -Properties $zoneProperties
-DomainEntityProperties -Domain $Domain -File $File -Entity "computer" -Properties $controllerProperties
-MiscProperties -Domain $Domain -File $File
-
-Get-Content -Path "$File" | ForEach-Object {
-    $_.ToLower().Trim() -split '[,=]' | ForEach-Object {
-        $_.Trim()
-    }
-} | Where-Object { $_ -ne '' } | Sort-Object | Get-Unique -AsString | Set-Content -Path "$File" -Force
 
 
