@@ -4,7 +4,7 @@ Parses information from the Current or specified Domain into a dictionary file t
 
 ### Load into memory
 ```
-IEX (IWR -UseBasicParsing https://raw.githubusercontent.com/The-Viper-One/Invoke-DomainDictionary/main/Invoke-DomainDictionary)
+IEX(New-Object System.Net.WebClient).DownloadString("https://raw.githubusercontent.com/The-Viper-One/Invoke-DomainDictionary/main/Invoke-DomainDictionary")
 ```
 
 ### Commands
